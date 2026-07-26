@@ -1,0 +1,4 @@
+.venv/
+.env
+roadmap.html
+__pycache__
