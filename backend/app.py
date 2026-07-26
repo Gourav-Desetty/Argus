@@ -4,6 +4,7 @@ from fastapi import FastAPI, UploadFile, HTTPException
 from backend.logger import logging, LOG_FILE_PATH
 from backend.parser import parse_logs
 from backend.detector import detect_incidents
+from backend.incident_builder import build_incident
 
 app = FastAPI()
 
@@ -47,8 +48,14 @@ def cache():
 def logs():
     logs = get_logs(LOG_FILE_PATH)
     parsed_logs = parse_logs(logs)
-    incident = detect_incidents(parsed_logs)
+    detection = detect_incidents(parsed_logs)
+
+    incident = build_incident(
+        raw_logs=logs,
+        parsed_logs=parsed_logs,
+        detection_result=detection
+    )
 
     return {
-        "Incident": incident
+        "output": incident
     }
