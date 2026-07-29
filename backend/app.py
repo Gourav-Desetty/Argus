@@ -1,29 +1,27 @@
 import os, time
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, HTTPException
-from backend.logger import logging, LOG_FILE_PATH
-from backend.parser import Parser
-from backend.detector import Detector
-from backend.incident_builder import IncidentBuilder
+from backend.core.logger import logging, LOG_FILE_PATH
+from backend.services.parser import Parser
+from backend.services.detector import Detector
+from backend.services.incident_builder import IncidentBuilder
+from backend.services.prompt_builder import PromptBuilder
+from backend.services.llm import LLMRouter
+from agents.log_analysis_agent import LogAnalysisAgent
 
 app = FastAPI()
 detector = Detector()
 parser = Parser()
 builder = IncidentBuilder()
+prompt_builder = PromptBuilder()
+llm_router = LLMRouter()
+log_analysis_agent = LogAnalysisAgent()
 
 #------------------------------------Helper Functions--------------------------------#
 
 def get_logs(path):
     with open(path, "r") as f:
         return f.readlines()
-
-#------------------------------------Routes------------------------------------------#
-@app.get('/')
-def root():
-    return{
-        "message": "Argus is running"
-    }
-
 
 #-------------------------------------Dummy Routes------------------------------------#
 @app.get('/login')
@@ -45,7 +43,15 @@ def database():
 def cache():
     logging.warning("failed to retrieve cache")
     return {"message": "Cache miss"}
-#-------------------------------------------------------------------------------------#
+
+
+#------------------------------------Routes------------------------------------------#
+
+@app.get('/')
+def root():
+    return{
+        "message": "Argus is running"
+    }
 
 @app.get('/logs')
 def logs():
@@ -59,6 +65,15 @@ def logs():
         detection_result=detection
     )
 
+    state = {
+        "incident": incident,
+        "log_analysis": {},
+        "root_cause": {},
+        "report": {}
+    }
+    workflow = log_analysis_agent.graph()
+    result = workflow.invoke(state)
+
     return {
-        "output": incident
+        "result": result
     }
