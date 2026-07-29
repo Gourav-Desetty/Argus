@@ -2,3 +2,5 @@
 .env
 roadmap.html
 __pycache__
+logs/
+output.json
